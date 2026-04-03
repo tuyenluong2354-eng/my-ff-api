@@ -9,25 +9,34 @@ def get_info():
     if not uid:
         return jsonify({"status": "error", "message": "Thiếu ID"}), 400
     
-    # Sử dụng nguồn API cộng đồng thường xuyên được cập nhật
-    url = f"https://api.vinh09.com/ff/info?id={uid}"
+    # Tự động xóa dấu cách dư thừa nếu bạn lỡ tay nhập nhầm
+    uid = uid.strip()
     
-    try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            return jsonify({
-                "status": "error", 
-                "message": "ID không tồn tại hoặc nguồn dữ liệu đang bận"
-            }), 404
-    except Exception as e:
-        return jsonify({"status": "error", "message": "Lỗi kết nối", "detail": str(e)}), 500
+    # Danh sách các nguồn dự phòng (Thử nguồn 1 lỗi sẽ nhảy sang nguồn 2)
+    sources = [
+        f"https://ffhx.in/api/api.php?uid={uid}",
+        f"https://freefireapi.com.br/api/search_id?id={uid}"
+    ]
+    
+    for url in sources:
+        try:
+            res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+            data = res.json()
+            # Kiểm tra nếu lấy được tên nhân vật
+            nick = data.get("name") or data.get("nickname")
+            if nick:
+                return jsonify({
+                    "status": "thành công",
+                    "nickname": nick,
+                    "level": data.get("level", "??"),
+                    "id": uid
+                })
+        except:
+            continue # Thử nguồn tiếp theo nếu nguồn này lỗi
+            
+    return jsonify({"status": "lỗi", "message": "Tất cả nguồn dữ liệu đang bận hoặc ID sai"}), 404
 
 @app.route('/')
 def home():
-    return "<h1>API Free Fire Online</h1><p>Cách dùng: /api/ff?id=SO_ID</p>"
-
-if __name__ == '__main__':
-    app.run()
+    return "API FF đang chạy (Đã sửa lỗi DNS)"
 
