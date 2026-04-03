@@ -9,30 +9,19 @@ def get_ff_info():
     if not uid:
         return jsonify({"status": "error", "message": "Vui lòng nhập ID"}), 400
     
-    # Nguồn check ID Free Fire cực chuẩn của Garena (Napthe.vn)
-    url = "https://id.game.garena.vn/api/login/get_player_info"
-    payload = {
-        "app_id": 100067,
-        "player_id": uid
-    }
+    # Sử dụng nguồn API dự phòng khác
+    url = f"https://api.vinh09.com/ff/info?id={uid}"
     
     try:
-        # Gửi yêu cầu lấy tên thật
-        response = requests.post(url, json=payload, timeout=10)
-        data = response.json()
-        
-        if "nickname" in data:
-            return jsonify({
-                "status": "success",
-                "id": uid,
-                "nickname": data["nickname"],
-                "region": "VN"
-            })
-        else:
-            return jsonify({"status": "error", "message": "ID không tồn tại"}), 404
-            
+        response = requests.get(url, timeout=15)
+        # Nếu nguồn này trả về JSON trực tiếp
+        return jsonify(response.json())
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({
+            "status": "error",
+            "message": "Nguồn dữ liệu đang bận, thử lại sau",
+            "id": uid
+        }), 500
 
 @app.route('/')
 def home():
