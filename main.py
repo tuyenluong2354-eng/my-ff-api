@@ -9,36 +9,26 @@ def get_ff_info():
     if not uid:
         return jsonify({"status": "error", "message": "Vui lòng nhập ID"}), 400
     
-    # Nguồn lấy dữ liệu từ hệ thống ffhx.in
-    url = f"https://ffhx.in/api/api.php?uid={uid}"
+    # Sử dụng nguồn API Free Fire dự phòng có độ ổn định cao
+    url = f"https://freefire-api-five.vercel.app/api/info?id={uid}"
     
     try:
-        # Gửi yêu cầu với Header để giả lập trình duyệt
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-        }
+        # Giả lập trình duyệt để tránh bị chặn
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=10)
-        data = response.json()
         
-        # Nếu lấy thành công dữ liệu từ ffhx
-        if "name" in data or "nickname" in data:
-            return jsonify({
-                "status": "success",
-                "nickname": data.get("name") or data.get("nickname"),
-                "level": data.get("level", "N/A"),
-                "last_login": data.get("lastlogin", "N/A"),
-                "uid": uid,
-                "source": "ffhx.in"
-            })
+        # Kiểm tra xem có phải JSON không trước khi xử lý
+        if response.status_code == 200:
+            return jsonify(response.json())
         else:
-            return jsonify({"status": "error", "message": "ID không hợp lệ hoặc không có dữ liệu"}), 404
+            return jsonify({"status": "error", "message": "ID không tồn tại hoặc lỗi nguồn"}), 404
             
     except Exception as e:
-        return jsonify({"status": "error", "message": "Nguồn ffhx đang bận", "detail": str(e)}), 500
+        return jsonify({"status": "error", "message": "Nguồn dữ liệu đang bảo trì"}), 500
 
 @app.route('/')
 def home():
-    return "API FF đang chạy nguồn FFHX! Dùng: /api/ff?id=SO_ID"
+    return "API FF đang chạy! Dùng: /api/ff?id=SO_ID"
 
 if __name__ == '__main__':
     app.run()
